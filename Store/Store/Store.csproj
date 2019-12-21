@@ -113,10 +113,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Store.mdf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Store_log.ldf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <DependentUpon>Store.mdf</DependentUpon>
     </Content>
   </ItemGroup>

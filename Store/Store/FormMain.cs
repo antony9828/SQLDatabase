@@ -83,5 +83,54 @@ namespace Store
         {
             PopulateProducts();
         }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            string query = "INSERT INTO Specific_Order VALUES (@Specific_Order_Name, 0, 0, 'Pending')";
+
+            using (connection = new SqlConnection(connectionString))
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                connection.Open();
+
+                command.Parameters.AddWithValue("@Specific_Order_Name", textBox1.Text);
+
+                command.ExecuteScalar();
+            }
+            PopulateSpecific_Objects();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            string query = "UPDATE Specific_Order SET Name = @Specific_Order_Name WHERE Id = @Specific_Order_Id";
+
+            using (connection = new SqlConnection(connectionString))
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                connection.Open();
+
+                command.Parameters.AddWithValue("@Specific_Order_Name", textBox1.Text);
+                command.Parameters.AddWithValue("@Specific_Order_Id", listBox0.SelectedValue);
+
+                command.ExecuteScalar();
+            }
+            PopulateSpecific_Objects();
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            string query = "DELETE FROM Specific_Order WHERE Id = @Specific_Order_Id";
+
+            using (connection = new SqlConnection(connectionString))
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                connection.Open();
+
+                command.Parameters.AddWithValue("@Specific_Order_Id", listBox0.SelectedValue);
+
+                command.ExecuteScalar();
+            }
+            PopulateSpecific_Objects();
+        }
     }
 }

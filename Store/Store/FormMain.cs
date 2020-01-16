@@ -15,8 +15,10 @@ namespace Store
     public partial class FormMain : Form
     {
         SqlConnection connection;
-        string connectionString;
+        SqlDataAdapter adapter;
+        SqlCommand command;
 
+        string connectionString;
 
         public FormMain()
         {
@@ -32,49 +34,62 @@ namespace Store
 
         private void PopulateSpecific_Objects()
         {
-            using (connection = new SqlConnection(connectionString))
-            using(SqlDataAdapter adapter = new SqlDataAdapter("SELECT * FROM Specific_Order", connection))
+            try { connection = new SqlConnection(connectionString); }
+            catch { MessageBox.Show("Connection error"); }
+            try { adapter = new SqlDataAdapter("SELECT * FROM Specific_Order", connection); }
+            catch { MessageBox.Show("Data Adapter error"); }
+
+            using (connection)
+            using(adapter)
             {
                 DataTable Specific_Order_Table = new DataTable();
                 adapter.Fill(Specific_Order_Table);
 
-                listBox0.DisplayMember = "Name";
-                listBox0.ValueMember = "Id";
-                listBox0.DataSource = Specific_Order_Table;
+                nameList.DisplayMember = "Name";
+                nameList.ValueMember = "Id";
+                nameList.DataSource = Specific_Order_Table;
 
-                listBox1.DisplayMember = "Items";
-                listBox1.ValueMember = "Id";
-                listBox1.DataSource = Specific_Order_Table;
+                itemsListSpecificOrder.DisplayMember = "Items";
+                itemsListSpecificOrder.ValueMember = "Id";
+                itemsListSpecificOrder.DataSource = Specific_Order_Table;
 
-                listBox2.DisplayMember = "Price";
-                listBox2.ValueMember = "Id";
-                listBox2.DataSource = Specific_Order_Table;
+                priceList.DisplayMember = "Price";
+                priceList.ValueMember = "Id";
+                priceList.DataSource = Specific_Order_Table;
 
-                listBox3.DisplayMember = "Status";
-                listBox3.ValueMember = "Id";
-                listBox3.DataSource = Specific_Order_Table;
+                statusList.DisplayMember = "Status";
+                statusList.ValueMember = "Id";
+                statusList.DataSource = Specific_Order_Table;
             }
                 
         }
 
         private void PopulateProducts()
         {
+            string query = "SELECT a.Name FROM Product a " +
+               "INNER JOIN Specific_Order__Product b ON a.Id = b.Product_Id " +
+               "WHERE b.Specific_Order_Id = @Specific_Order_Id";
 
-            string query = "SELECT a.Name FROM Product a " + 
-                "INNER JOIN Specific_Order__Product b ON a.Id = b.Product_Id " +
-                "WHERE b.Specific_Order_Id = @Specific_Order_Id";
-            using (connection = new SqlConnection(connectionString))
-            using(SqlCommand command =  new SqlCommand(query, connection))
-            using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+            try { connection = new SqlConnection(connectionString); }
+            catch { MessageBox.Show("Connection error"); }
+            try { command = new SqlCommand(query, connection); }
+            catch { MessageBox.Show("Command error"); }
+            try { adapter = new SqlDataAdapter(command); }
+            catch { MessageBox.Show("Data Adapter error"); }
+
+            using (connection)
+            using(command)
+            using (adapter)
             {
-                command.Parameters.AddWithValue("@Specific_Order_Id", listBox0.SelectedValue);
+                try { command.Parameters.AddWithValue("@Specific_Order_Id", nameList.SelectedValue); }
+                catch { MessageBox.Show("Adding value error (join)"); }
 
                 DataTable SpecificProduct = new DataTable();
                 adapter.Fill(SpecificProduct);
 
-                listBox4.DisplayMember = "Name";
-                listBox4.ValueMember = "Id";
-                listBox4.DataSource = SpecificProduct;
+                itemListProduct.DisplayMember = "Name";
+                itemListProduct.ValueMember = "Id";
+                itemListProduct.DataSource = SpecificProduct;
             }
 
         }
@@ -82,53 +97,81 @@ namespace Store
         private void listBox0_SelectedIndexChanged(object sender, EventArgs e)
         {
             PopulateProducts();
+            //Task task = new Task(PopulateProducts);
+            //task.Start();
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private async void AddOrder_Click(object sender, EventArgs e)
         {
             string query = "INSERT INTO Specific_Order VALUES (@Specific_Order_Name, 0, 0, 'Pending')";
 
-            using (connection = new SqlConnection(connectionString))
-            using (SqlCommand command = new SqlCommand(query, connection))
+            try { connection = new SqlConnection(connectionString); }
+            catch { MessageBox.Show("Connection error"); }
+            try { command = new SqlCommand(query, connection); }
+            catch { MessageBox.Show("Command error"); }
+
+            using (connection)
+            using (command)
             {
-                connection.Open();
+                try { await connection.OpenAsync(); }
+                catch { MessageBox.Show("Connection Error (new order)"); }
 
-                command.Parameters.AddWithValue("@Specific_Order_Name", textBox1.Text);
+                try { command.Parameters.AddWithValue("@Specific_Order_Name", enterField.Text); }
+                catch { MessageBox.Show("Adding value error (new order)"); }
 
-                command.ExecuteScalar();
+                try { await command.ExecuteScalarAsync(); }
+                catch { MessageBox.Show("Execute Scalar error (new order)"); }
             }
             PopulateSpecific_Objects();
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private async void ChangeOrder_Click(object sender, EventArgs e)
         {
             string query = "UPDATE Specific_Order SET Name = @Specific_Order_Name WHERE Id = @Specific_Order_Id";
 
-            using (connection = new SqlConnection(connectionString))
-            using (SqlCommand command = new SqlCommand(query, connection))
+            try { connection = new SqlConnection(connectionString); }
+            catch { MessageBox.Show("Connection error"); }
+            try { command = new SqlCommand(query, connection); }
+            catch { MessageBox.Show("Command error"); }
+
+            using (connection)
+            using (command)
             {
-                connection.Open();
+                try { await connection.OpenAsync(); }
+                catch { MessageBox.Show("Connection Error (change order)"); }
 
-                command.Parameters.AddWithValue("@Specific_Order_Name", textBox1.Text);
-                command.Parameters.AddWithValue("@Specific_Order_Id", listBox0.SelectedValue);
+                try { command.Parameters.AddWithValue("@Specific_Order_Name", enterField.Text); }
+                catch { MessageBox.Show("Adding value error (change order)"); }
 
-                command.ExecuteScalar();
+                try { command.Parameters.AddWithValue("@Specific_Order_Id", nameList.SelectedValue); }
+                catch { MessageBox.Show("Adding value error (change order)"); }
+
+                try { await command.ExecuteScalarAsync(); }
+                catch { MessageBox.Show("Execute Scalar error (change order)"); }
             }
             PopulateSpecific_Objects();
         }
 
-        private void button3_Click(object sender, EventArgs e)
+        private async void DeleteOrder_Click(object sender, EventArgs e)
         {
             string query = "DELETE FROM Specific_Order WHERE Id = @Specific_Order_Id";
 
-            using (connection = new SqlConnection(connectionString))
-            using (SqlCommand command = new SqlCommand(query, connection))
+            try { connection = new SqlConnection(connectionString); }
+            catch { MessageBox.Show("Connection error"); }
+            try { command = new SqlCommand(query, connection); }
+            catch { MessageBox.Show("Command error"); }
+
+            using (connection)
+            using (command)
             {
-                connection.Open();
+                try { await connection.OpenAsync(); }
+                catch { MessageBox.Show("Connection Error (delete order)"); }
 
-                command.Parameters.AddWithValue("@Specific_Order_Id", listBox0.SelectedValue);
+                try { command.Parameters.AddWithValue("@Specific_Order_Id", nameList.SelectedValue); }
+                catch { MessageBox.Show("Adding value error (delete order)"); }
 
-                command.ExecuteScalar();
+                try { await command.ExecuteScalarAsync(); }
+                catch { MessageBox.Show("Execute Scalar error (delete order)"); }
             }
             PopulateSpecific_Objects();
         }
